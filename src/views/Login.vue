@@ -1,21 +1,22 @@
 <template>
   <div class='login'>
     <div class='login-card'>
-      <el-form>
-        <el-form-item>
-          <span>用户名</span>
-          <el-input prefix-icon="el-icon-user" v-model="userName"></el-input>
+      <el-form :rules="loginRules" :model="loginRuleForm" label-width="80px" ref='loginForm'>
+        <el-form-item label='用户名' prop='userName'>
+          <el-input prefix-icon="el-icon-user" v-model="loginRuleForm.userName"></el-input>
+        </el-form-item>
+        <el-form-item label='密码' prop='password'>
+          <el-input prefix-icon="el-icon-lock" type="password" v-model="loginRuleForm.password"></el-input>
         </el-form-item>
         <el-form-item>
-          <span>密码</span>
-          <el-input prefix-icon="el-icon-lock" type="password" v-model="password"></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary">登录</el-button>
+          <el-button type="primary" @click="login">登录</el-button>
           <el-button @click="reset">重置</el-button>
         </el-form-item>
       </el-form>
+
     </div>
+
+
 
   </div>
 </template>
@@ -25,14 +26,61 @@
     name: 'Login',
     data() {
       return {
-        userName: '',
-        password: ''
+        loginRuleForm: {
+          userName: 'admin',
+          password: 'admin',
+        },
+
+        loginRules: {
+          userName: [{
+            required: true,
+            message: '请输入用户名',
+            trigger: 'blur'
+          }],
+          password: [{
+            required: true,
+            message: '请输入密码',
+            trigger: 'blur'
+          }]
+        }
       }
     },
     methods: {
       reset() {
-        this.userName = ''
-        this.password = ''
+        this.$refs.loginForm.resetFields()
+      },
+      login() {
+        this.$refs.loginForm.validate(async (isOk) => {
+          if (!isOk) {
+            this.$notify.error({
+              title: '错误',
+              message: '用户名或密码为不合规'
+            });
+            return
+          }
+
+          const res = await this.$http({
+            url: '/login.php',
+            params: {
+              username: this.loginRuleForm.userName,
+              password: this.loginRuleForm.password
+            }
+          })
+          console.log(res)
+          if(res.data){
+            this.$store.commit('setIsLogin',true)
+            this.$store.commit('setUserInfo',res.data[0])
+            this.$router.push('./home')
+
+          }else {
+            this.$notify.error({
+              title: '错误',
+              message: '登录失败'
+            });
+          }
+        })
+
+
       }
     }
   }
@@ -43,7 +91,8 @@
     .login-card {
       width: 40%;
       height: 40vh;
-      min-height: 300px;
+      max-height: 300px;
+      max-width: 450px;
       box-sizing: border-box;
       border: 1px solid #f5f5f5;
       margin: auto;
@@ -75,11 +124,11 @@
     }
   }
 
-  @media screen and (max-width:750px){
+  @media screen and (max-width:750px) {
     .login {
       .login-card {
         width: 95%;
       }
-    } 
+    }
   }
 </style>
