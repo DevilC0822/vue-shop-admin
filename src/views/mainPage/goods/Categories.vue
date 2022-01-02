@@ -1,0 +1,16 @@
+<template>
+  <div class='categories-view'>
+    商品分类
+
+  </div>
+</template>
+
+<script>
+export default {
+
+}
+</script>
+
+<style lang="scss" scoped>
+
+</style>
