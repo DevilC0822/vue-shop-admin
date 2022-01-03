@@ -84,27 +84,38 @@
 		</el-pagination>
 
 		<!-- 添加用户弹出框 -->
-		<el-dialog title="添加用户" :visible.sync="addUserDialog">
-			<el-form :model="addUserDialogFrom">
-				<el-form-item label="用户名" label-width="70px">
+		<el-dialog
+			title="添加用户"
+			:visible.sync="addUserDialog"
+			:close-on-click-modal="false"
+			@close="addUserFromClose"
+		>
+			<el-form
+				:model="addUserDialogFrom"
+				:rules="addUserRules"
+				ref="addUserFrom"
+			>
+				<el-form-item label="用户名" label-width="70px" prop="username">
 					<el-input
 						v-model="addUserDialogFrom.username"
 						autocomplete="off"
 					></el-input>
 				</el-form-item>
-				<el-form-item label="密码" label-width="70px">
+				<el-form-item label="密码" label-width="70px" prop="password">
 					<el-input
 						v-model="addUserDialogFrom.password"
 						autocomplete="off"
+						type="password"
+						show-password
 					></el-input>
 				</el-form-item>
-				<el-form-item label="密码" label-width="70px">
+				<el-form-item label="手机号" label-width="70px" prop="mobile">
 					<el-input
 						v-model="addUserDialogFrom.mobile"
 						autocomplete="off"
 					></el-input>
 				</el-form-item>
-				<el-form-item label="密码" label-width="70px">
+				<el-form-item label="邮箱" label-width="70px" prop="email">
 					<el-input
 						v-model="addUserDialogFrom.email"
 						autocomplete="off"
@@ -126,6 +137,21 @@ export default {
 		this.getUserInfo()
 	},
 	data() {
+		let checkMobil = (rule, value, callback) => {
+			// if(!value) return callback(new Error('手机号不能为空'))
+			const regMobile =
+				/^1(3\d|4[5-9]|5[0-35-9]|6[2567]|7[0-8]|8\d|9[0-35-9])\d{8}$/
+			if (!regMobile.test(value)) return callback(new Error('手机号不合法'))
+			return callback()
+		}
+
+		let checkEmail = (rule, value, callback) => {
+			// if(!value) callback(new Error('邮箱不能为空'))
+			const regEmail =
+				/^[A-Za-z0-9\u4e00-\u9fa5]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
+			if (!regEmail.test(value)) return callback(new Error('邮箱不合法'))
+			return callback()
+		}
 		return {
 			getUsersParams: {
 				query: '',
@@ -140,9 +166,33 @@ export default {
 				username: '',
 				password: '',
 				mobile: '',
-				email: '',
+				email: '@qq.com',
 			},
 			addUserDialog: false,
+
+			addUserRules: {
+				username: [
+					{ required: true, message: '用户名不能为空', trigger: 'blur' },
+					{ min: 2, max: 8, message: '长度在 2 到 8 个字符', trigger: 'blur' },
+				],
+				password: [
+					{ required: true, message: '密码不能为空', trigger: 'blur' },
+					{
+						min: 6,
+						max: 15,
+						message: '长度在 6 到 15 个字符',
+						trigger: 'blur',
+					},
+				],
+				mobile: [
+					{ required: true, message: '手机号不能为空', trigger: 'blur' },
+					{ validator: checkMobil, trigger: 'blur' },
+				],
+				email: [
+					{ required: true, message: '邮箱不能为空', trigger: 'blur' },
+					{ validator: checkEmail, trigger: 'blur' },
+				],
+			},
 		}
 	},
 	methods: {
@@ -171,10 +221,45 @@ export default {
 		handleClick(argument) {
 			console.log(argument)
 		},
-		addUserDialogSubmit() {
-			console.log('submit')
-			this.addUserDialog = false
-		},
+		// addUserDialogSubmit() {
+		// 	this.$refs.addUserFrom.validate(async (valid) => {
+		// 		if (valid) {
+    //       console.log(this.addUserDialogFrom)
+		// 			let {data:res} = await this.$http({
+		// 				url: 'users',
+		// 				method: 'post',
+    //         // 直接传入this.addUserDialogFrom 提示用户名为空, 参数写死 仍然如此
+		// 				params: {
+    //           username:'Devil',
+    //           password:'DevilC11',
+    //           email:'',
+    //           mobile:''
+    //         }
+		// 			})
+		// 			console.log(res)
+		// 			this.addUserDialog = false
+    //       this.getUserInfo()
+		// 		} else {
+		// 			this.$message.error('表单预验证未通过')
+		// 		}
+		// 	})
+		// },
+        addUserDialogSubmit() {
+      this.$refs.addUserFrom.validate(async valid => {
+        console.log(valid)
+        if (!valid) return this.$message.error('表单预验证未通过')
+        // 可以发起添加用户请求
+        const { data: res } = await this.$http.post('users', this.addUserDialogFrom)
+        if (res.meta.status !== 201) {
+          return this.$message.error('用户添加失败了~')
+        }
+        // 隐藏添加用户的对话框
+        this.addUserDialog = false
+        // 添加成后重新获取用户数据,不需要用户手动刷新
+        this.getUserInfo()
+        return this.$message.success('用户添加成功了~')
+      })
+    },
 
 		// page-size改变
 		handleSizeChange(newSize) {
@@ -186,6 +271,12 @@ export default {
 		handleCurrentChange(newPage) {
 			this.getUsersParams.pagenum = newPage
 			this.getUserInfo()
+		},
+
+		//
+		addUserFromClose() {
+			this.$refs.addUserFrom.resetFields()
+			// console.log(this.$refs)
 		},
 	},
 }

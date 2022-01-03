@@ -6,7 +6,15 @@
 
 <script>
 export default {
-  name:''
+  name:'Welcome',
+  created() {
+    this.$parent.$refs.breadcrumb.$el.style.display = 'none';
+  },
+  beforeDestroy(){
+    this.$parent.$refs.breadcrumb.$el.style.display = 'block';
+
+  }
+
 }
 </script>
 

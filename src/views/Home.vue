@@ -1,6 +1,10 @@
 <template>
 	<el-container class="home-container">
-		<el-header>Header</el-header>
+		<el-header>
+      <h2>
+      电商后台管理系统
+      </h2>
+    </el-header>
 		<el-container>
 			<el-aside width='initial'>
 				<Aside></Aside>

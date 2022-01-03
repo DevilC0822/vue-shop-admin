@@ -2,10 +2,10 @@
 	<div class="main">
 		<div class="main-header">
 			<div>
-				<i v-show="isFold" @click="changeFold" class="el-icon-s-fold"></i>
-				<i v-show="!isFold" @click="changeFold" class="el-icon-s-unfold"></i>
+				<!-- <i v-show="isFold" @click="changeFold" class="el-icon-s-fold"></i>
+				<i v-show="!isFold" @click="changeFold" class="el-icon-s-unfold"></i> -->
 			</div>
-			<el-breadcrumb separator-class="el-icon-arrow-right">
+			<el-breadcrumb separator-class="el-icon-arrow-right" ref='breadcrumb' v-show='isShowHomeBreadcrumb'>
 				<el-breadcrumb-item @click.native='goHome'>首页</el-breadcrumb-item>
 				<el-breadcrumb-item v-for="(item,index) in breadcrumb" :key='index'>{{item}}</el-breadcrumb-item>
 			</el-breadcrumb>
@@ -21,6 +21,7 @@ export default {
 		return {
 			isFold: true,
 			breadcrumb: [],
+      isShowHomeBreadcrumb:true
 		}
 	},
 	methods: {
@@ -68,10 +69,11 @@ export default {
 .main {
   height:100%;
   overflow:hidden;
-  
+
 	.main-header {
 		display: flex;
 		align-items: center;
+        padding: 15px 0 0 15px;
 		i {
 			font-size: 36px;
 			margin-right: 18px;
@@ -81,6 +83,10 @@ export default {
 				background-color: rgba(0, 0, 0, 0.025);
 			}
 		}
+
+    .el-breadcrumb{
+      font-size: 16px;
+    }
 
     .el-breadcrumb .el-breadcrumb__item:first-child{
       cursor: pointer;

@@ -18,6 +18,7 @@
 						prefix-icon="el-icon-lock"
 						type="password"
 						v-model="loginRuleForm.password"
+            show-password
 					></el-input>
 				</el-form-item>
 				<el-form-item>
