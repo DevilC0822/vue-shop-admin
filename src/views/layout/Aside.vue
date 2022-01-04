@@ -69,15 +69,21 @@ export default {
 			console.log(key, keyPath)
 		},
 		sendBreadcrumb(key) {
-      let asideNavInfo = this.asideNavInfo
-      this.$bus.$emit('sendBreadcrumb',key,asideNavInfo)
-      
+			let asideNavInfo = this.asideNavInfo
+			this.$bus.$emit('sendBreadcrumb', key, asideNavInfo)
 		},
 		async getAsideNavInfo() {
 			const { data: res } = await this.$http({
 				url: '/menus',
 			})
-			if (res.meta.status != 200) return this.$message(res.meta.msg)
+			if (res.meta.status != 200) {
+				return this.$message(res.meta.msg)
+			}
+			if (res.meta.status == 400) {
+				window.sessionStorage.removeItem('token')
+				this.$router.push('/login')
+			}
+
 			this.asideNavInfo = res.data
 			// console.log(res)
 			for (const key in this.icon) {

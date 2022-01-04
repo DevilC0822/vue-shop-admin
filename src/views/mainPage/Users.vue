@@ -64,10 +64,18 @@
 				min-width="150"
 			>
 				<template slot-scope="scope">
-					<el-button @click="handleClick(scope.row)" type="text" size="small"
+					<el-button @click="editUser(scope.row.id)" type="text" size="small"
 						>修改</el-button
 					>
-					<el-button type="text" size="small">删除</el-button>
+
+					<template>
+						<el-button
+							type="text"
+							size="small"
+							@click="deleteUser(scope.row.id)"
+							>删除</el-button
+						>
+					</template>
 					<el-button type="text" size="small">分配角色</el-button>
 				</template>
 			</el-table-column>
@@ -88,22 +96,22 @@
 			title="添加用户"
 			:visible.sync="addUserDialog"
 			:close-on-click-modal="false"
-			@close="addUserFromClose"
+			@close="addUserFormClose"
 		>
 			<el-form
-				:model="addUserDialogFrom"
+				:model="addUserDialogForm"
 				:rules="addUserRules"
-				ref="addUserFrom"
+				ref="addUserForm"
 			>
 				<el-form-item label="用户名" label-width="70px" prop="username">
 					<el-input
-						v-model="addUserDialogFrom.username"
+						v-model="addUserDialogForm.username"
 						autocomplete="off"
 					></el-input>
 				</el-form-item>
 				<el-form-item label="密码" label-width="70px" prop="password">
 					<el-input
-						v-model="addUserDialogFrom.password"
+						v-model="addUserDialogForm.password"
 						autocomplete="off"
 						type="password"
 						show-password
@@ -111,13 +119,13 @@
 				</el-form-item>
 				<el-form-item label="手机号" label-width="70px" prop="mobile">
 					<el-input
-						v-model="addUserDialogFrom.mobile"
+						v-model="addUserDialogForm.mobile"
 						autocomplete="off"
 					></el-input>
 				</el-form-item>
 				<el-form-item label="邮箱" label-width="70px" prop="email">
 					<el-input
-						v-model="addUserDialogFrom.email"
+						v-model="addUserDialogForm.email"
 						autocomplete="off"
 					></el-input>
 				</el-form-item>
@@ -125,6 +133,35 @@
 			<div slot="footer" class="dialog-footer">
 				<el-button @click="addUserDialog = false">取 消</el-button>
 				<el-button type="primary" @click="addUserDialogSubmit">确 定</el-button>
+			</div>
+		</el-dialog>
+
+		<!-- 修改用户弹出框 -->
+		<el-dialog
+			title="修改用户"
+			:visible.sync="editUserFormDialog"
+			@close="editUserFormDialogClose"
+		>
+			<el-form :model="editUserForm" :rules="editUserRules" ref="editUserForm">
+				<el-form-item label="用户名">
+					<el-input
+						v-model="editUserForm.username"
+						autocomplete="off"
+						disabled
+					></el-input>
+				</el-form-item>
+				<el-form-item label="手机号" prop="mobile">
+					<el-input v-model="editUserForm.mobile" autocomplete="off"></el-input>
+				</el-form-item>
+				<el-form-item label="邮箱" prop="email">
+					<el-input v-model="editUserForm.email" autocomplete="off"></el-input>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="editUserFormDialog = false">取 消</el-button>
+				<el-button type="primary" @click="editUserDialogSubmit"
+					>确 定</el-button
+				>
 			</div>
 		</el-dialog>
 	</div>
@@ -162,13 +199,15 @@ export default {
 
 			usersInfo: [],
 			usersTotal: 0,
-			addUserDialogFrom: {
-				username: '',
-				password: '',
-				mobile: '',
-				email: '@qq.com',
+			addUserDialogForm: {
+				username: 'user',
+				password: 'user',
+				mobile: '1345327891',
+				email: '1345327891@qq.com',
 			},
+			editUserForm: {},
 			addUserDialog: false,
+			editUserFormDialog: false,
 
 			addUserRules: {
 				username: [
@@ -184,6 +223,16 @@ export default {
 						trigger: 'blur',
 					},
 				],
+				mobile: [
+					{ required: true, message: '手机号不能为空', trigger: 'blur' },
+					{ validator: checkMobil, trigger: 'blur' },
+				],
+				email: [
+					{ required: true, message: '邮箱不能为空', trigger: 'blur' },
+					{ validator: checkEmail, trigger: 'blur' },
+				],
+			},
+			editUserRules: {
 				mobile: [
 					{ required: true, message: '手机号不能为空', trigger: 'blur' },
 					{ validator: checkMobil, trigger: 'blur' },
@@ -218,48 +267,128 @@ export default {
 			}
 			this.$message.success(res.meta.msg)
 		},
-		handleClick(argument) {
-			console.log(argument)
+		async editUser(id) {
+			console.log(id)
+			// 传入id, 通过id获取用户信息
+			let { data: res } = await this.$http({
+				url: `/users/${id}`,
+				method: 'get',
+			})
+			this.editUserForm = res.data
+
+			this.editUserFormDialog = true
 		},
 		// addUserDialogSubmit() {
-		// 	this.$refs.addUserFrom.validate(async (valid) => {
+		// 	this.$refs.addUserForm.validate(async (valid) => {
 		// 		if (valid) {
-    //       console.log(this.addUserDialogFrom)
+		//       console.log(this.addUserDialogForm)
 		// 			let {data:res} = await this.$http({
 		// 				url: 'users',
 		// 				method: 'post',
-    //         // 直接传入this.addUserDialogFrom 提示用户名为空, 参数写死 仍然如此
+		//         // 直接传入this.addUserDialogForm 提示用户名为空, 参数写死 仍然如此
 		// 				params: {
-    //           username:'Devil',
-    //           password:'DevilC11',
-    //           email:'',
-    //           mobile:''
-    //         }
+		//           username:'Devil',
+		//           password:'DevilC11',
+		//           email:'',
+		//           mobile:''
+		//         }
 		// 			})
 		// 			console.log(res)
 		// 			this.addUserDialog = false
-    //       this.getUserInfo()
+		//       this.getUserInfo()
 		// 		} else {
 		// 			this.$message.error('表单预验证未通过')
 		// 		}
 		// 	})
 		// },
-        addUserDialogSubmit() {
-      this.$refs.addUserFrom.validate(async valid => {
-        console.log(valid)
-        if (!valid) return this.$message.error('表单预验证未通过')
-        // 可以发起添加用户请求
-        const { data: res } = await this.$http.post('users', this.addUserDialogFrom)
-        if (res.meta.status !== 201) {
-          return this.$message.error('用户添加失败了~')
-        }
-        // 隐藏添加用户的对话框
-        this.addUserDialog = false
-        // 添加成后重新获取用户数据,不需要用户手动刷新
-        this.getUserInfo()
-        return this.$message.success('用户添加成功了~')
-      })
-    },
+		addUserDialogSubmit() {
+			this.$refs.addUserForm.validate(async (valid) => {
+				console.log(valid)
+				if (!valid) return this.$message.error('表单预验证未通过')
+				// 可以发起添加用户请求
+				const { data: res } = await this.$http.post(
+					'users',
+					this.addUserDialogForm
+				)
+				if (res.meta.status !== 201) {
+					return this.$message.error('用户添加失败了~')
+				}
+				// 隐藏添加用户的对话框
+				this.addUserDialog = false
+				// 添加成后重新获取用户数据,不需要用户手动刷新
+				this.getUserInfo()
+				return this.$message.success('用户添加成功了~')
+			})
+		},
+		// editUserDialogSubmit() {
+		// 	this.$refs.editUserForm.validate(async (valid) => {
+		//     if(valid) {
+		//       console.log(this.editUserForm)
+		//       const { data: res } = await this.$http({
+		//         url:`/users/${this.editUserForm.id}`,
+		//         method:'put',
+		//         params:{
+		//           mobile:'19858392984',
+		//           email:this.editUserForm.email
+		//         }
+		//       })
+		//       console.log(res)
+		//       this.editUserFormDialog = false
+		//       this.getUserInfo()
+		//     }
+		// 	})
+		// },
+
+		editUserDialogSubmit() {
+			this.$refs.editUserForm.validate(async (valid) => {
+				console.log(valid)
+				if (!valid) return
+				// 发起修改用户信息的数据请求
+				const { data: res } = await this.$http.put(
+					'users/' + this.editUserForm.id,
+					{
+						email: this.editUserForm.email,
+						mobile: this.editUserForm.mobile,
+					}
+				)
+				if (res.meta.status !== 200) {
+					this.$message.error('更新用户信息失败!')
+				}
+				this.editUserFormDialog = false
+				this.getUserInfo()
+				this.$message.success('更新用户信息成功!')
+			})
+		},
+
+		async deleteUser(id) {
+			this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
+				confirmButtonText: '确定',
+				cancelButtonText: '取消',
+				type: 'warning',
+			})
+				.then(async () => {
+					const { data: res } = await this.$http({
+						url: `/users/${id}`,
+						method: 'delete',
+					})
+					if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+					this.$message.success('删除用户成功!')
+
+					if (this.usersInfo.length === 1) {
+						// 判断当前展示的用户数据是否只有一条
+						this.getUsersParams.pagenum = 1
+							? 1
+							: this.getUsersParams.pagenum - 1 // 若是，则继续判断页码是否已经在第一页，若否，则-1，若是则保持在该页
+					}
+					this.getUserInfo()
+				})
+				.catch(() => {
+					this.$message({
+						type: 'info',
+						message: '已取消删除',
+					})
+				})
+		},
 
 		// page-size改变
 		handleSizeChange(newSize) {
@@ -274,9 +403,11 @@ export default {
 		},
 
 		//
-		addUserFromClose() {
-			this.$refs.addUserFrom.resetFields()
-			// console.log(this.$refs)
+		addUserFormClose() {
+			this.$refs.addUserForm.resetFields()
+		},
+		editUserFormDialogClose() {
+			// this.$refs.editUserForm.resetFields()
 		},
 	},
 }
