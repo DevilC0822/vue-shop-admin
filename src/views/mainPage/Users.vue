@@ -76,7 +76,7 @@
 							>删除</el-button
 						>
 					</template>
-					<el-button type="text" size="small">分配角色</el-button>
+					<el-button @click="$message.info('gugugu~')" type="text" size="small">分配角色</el-button>
 				</template>
 			</el-table-column>
 		</el-table>
@@ -407,7 +407,7 @@ export default {
 			this.$refs.addUserForm.resetFields()
 		},
 		editUserFormDialogClose() {
-			// this.$refs.editUserForm.resetFields()
+			this.$refs.editUserForm.resetFields()
 		},
 	},
 }
