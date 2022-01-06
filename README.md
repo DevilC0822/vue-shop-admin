@@ -1,5 +1,7 @@
 # vue-shop-admin
 
+[demo](http://175.24.198.84:4001)
+
 ## Project setup
 ```
 yarn install
