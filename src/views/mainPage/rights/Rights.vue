@@ -32,6 +32,7 @@ export default {
 				method: 'GET',
 			})
 			this.rightsList = res.data
+      console.log(res)
 		},
 	},
 	created() {
