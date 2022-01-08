@@ -27,7 +27,10 @@
 								>
 							</el-col>
 							<el-col :span="18">
-								<el-row v-for="item2 in item.children" :key="item2.id">
+								<el-row v-for="item2 in item.children" :key="item2.id" :class="{
+								topBorder: item.children.indexOf(item2) !== 0,
+								bottomBorder: false,
+							}">
 									<el-col :span="8">
 										<el-tag  closable type="success" @close="deleteSingleRight(scope.row, item2.id)">{{
 											item2.authName
@@ -47,7 +50,7 @@
 						</el-row>
 					</template>
 				</el-table-column>
-				<el-table-column type="index" width="50"> </el-table-column>
+				<el-table-column type="index" width="50" label="序号"> </el-table-column>
 				<el-table-column prop="roleName" label="角色名称"> </el-table-column>
 				<el-table-column prop="roleDesc" label="角色描述"> </el-table-column>
 				<el-table-column fixed="right" label="操作" width="300">

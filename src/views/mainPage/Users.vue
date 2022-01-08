@@ -76,7 +76,7 @@
 							>删除</el-button
 						>
 					</template>
-					<el-button @click="$message.info('gugugu~')" type="text" size="small">分配角色</el-button>
+					<el-button @click="changeRole(scope.row)" type="text" size="small">分配角色</el-button>
 				</template>
 			</el-table-column>
 		</el-table>
@@ -164,6 +164,30 @@
 				>
 			</div>
 		</el-dialog>
+
+    <!-- 分配角色弹出框 -->
+    <el-dialog
+  title="分配角色"
+  :visible.sync="changeRoleDialog"
+  :center="false"
+  >
+  <p>当前的用户:{{currentUser.username}}</p>
+  <p>当前的角色:{{currentUser.role_name}}</p>
+
+  <span>分配新角色:</span><el-select v-model="value" placeholder="请选择">
+    <el-option
+      v-for="item in rightsRoles"
+      :key="item.id"
+      :label="item.roleName"
+      :value="item.id">
+    </el-option>
+  </el-select>
+
+  <span slot="footer" class="dialog-footer">
+    <el-button @click="changeRoleDialog = false">取 消</el-button>
+    <el-button type="primary" @click="changeRoleDialogSubmit">确 定</el-button>
+  </span>
+</el-dialog>
 	</div>
 </template>
 
@@ -172,6 +196,7 @@ export default {
 	name: 'Users',
 	created() {
 		this.getUserInfo()
+    this.getRightsRoles()
 	},
 	data() {
 		let checkMobil = (rule, value, callback) => {
@@ -196,7 +221,7 @@ export default {
 				pagesize: 5,
 			},
 			userSearch: '',
-
+      rightsRoles:{},
 			usersInfo: [],
 			usersTotal: 0,
 			addUserDialogForm: {
@@ -208,6 +233,9 @@ export default {
 			editUserForm: {},
 			addUserDialog: false,
 			editUserFormDialog: false,
+      changeRoleDialog:false,
+      currentUser: {},
+      value:'',
 
 			addUserRules: {
 				username: [
@@ -255,6 +283,14 @@ export default {
 			this.usersInfo = res.data.users
 			this.usersTotal = res.data.total
 		},
+    		async getRightsRoles() {
+			const { data: res } = await this.$http({
+				url: 'roles',
+				method: 'GET',
+			})
+			this.rightsRoles = res.data
+      console.log(this.rightsRoles)
+		},
 		async changeStatus(user) {
 			let { data: res } = await this.$http({
 				url: `users/${user.id}/state/${user.mg_state}`,
@@ -278,87 +314,46 @@ export default {
 
 			this.editUserFormDialog = true
 		},
-		// addUserDialogSubmit() {
-		// 	this.$refs.addUserForm.validate(async (valid) => {
-		// 		if (valid) {
-		//       console.log(this.addUserDialogForm)
-		// 			let {data:res} = await this.$http({
-		// 				url: 'users',
-		// 				method: 'post',
-		//         // 直接传入this.addUserDialogForm 提示用户名为空, 参数写死 仍然如此
-		// 				params: {
-		//           username:'Devil',
-		//           password:'DevilC11',
-		//           email:'',
-		//           mobile:''
-		//         }
-		// 			})
-		// 			console.log(res)
-		// 			this.addUserDialog = false
-		//       this.getUserInfo()
-		// 		} else {
-		// 			this.$message.error('表单预验证未通过')
-		// 		}
-		// 	})
-		// },
 		addUserDialogSubmit() {
 			this.$refs.addUserForm.validate(async (valid) => {
-				console.log(valid)
-				if (!valid) return this.$message.error('表单预验证未通过')
-				// 可以发起添加用户请求
-				const { data: res } = await this.$http.post(
-					'users',
-					this.addUserDialogForm
-				)
-				if (res.meta.status !== 201) {
-					return this.$message.error('用户添加失败了~')
+				if (valid) {
+		      console.log(this.addUserDialogForm)
+					let {data:res} = await this.$http({
+						url: 'users',
+						method: 'post',
+		        // 直接传入this.addUserDialogForm 提示用户名为空, 参数写死 仍然如此
+						data: this.addUserDialogForm
+					})
+          console.log(res)
+					if (res.meta.status !== 201) return this.$message.error(res.meta.msg)
+		      this.getUserInfo()
+					this.addUserDialog = false
+          this.$message.success('添加用户成功!')
+				} else {
+					this.$message.error('表单预验证未通过')
 				}
-				// 隐藏添加用户的对话框
-				this.addUserDialog = false
-				// 添加成后重新获取用户数据,不需要用户手动刷新
-				this.getUserInfo()
-				return this.$message.success('用户添加成功了~')
 			})
 		},
-		// editUserDialogSubmit() {
-		// 	this.$refs.editUserForm.validate(async (valid) => {
-		//     if(valid) {
-		//       console.log(this.editUserForm)
-		//       const { data: res } = await this.$http({
-		//         url:`/users/${this.editUserForm.id}`,
-		//         method:'put',
-		//         params:{
-		//           mobile:'19858392984',
-		//           email:this.editUserForm.email
-		//         }
-		//       })
-		//       console.log(res)
-		//       this.editUserFormDialog = false
-		//       this.getUserInfo()
-		//     }
-		// 	})
-		// },
-
 		editUserDialogSubmit() {
 			this.$refs.editUserForm.validate(async (valid) => {
-				console.log(valid)
-				if (!valid) return
-				// 发起修改用户信息的数据请求
-				const { data: res } = await this.$http.put(
-					'users/' + this.editUserForm.id,
-					{
-						email: this.editUserForm.email,
-						mobile: this.editUserForm.mobile,
-					}
-				)
-				if (res.meta.status !== 200) {
-					this.$message.error('更新用户信息失败!')
-				}
-				this.editUserFormDialog = false
-				this.getUserInfo()
-				this.$message.success('更新用户信息成功!')
+		    if(valid) {
+		      console.log(this.editUserForm)
+		      const { data: res } = await this.$http({
+		        url:`/users/${this.editUserForm.id}`,
+		        method:'put',
+		        data:{
+		          mobile: this.editUserForm.mobile,
+		          email:this.editUserForm.email
+		        }
+		      })
+		      if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+		      this.editUserFormDialog = false
+		      this.getUserInfo()
+          this.$message.success('更新用户信息成功!')
+		    }
 			})
 		},
+
 
 		async deleteUser(id) {
 			this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
@@ -390,6 +385,27 @@ export default {
 				})
 		},
 
+    changeRole(arg){
+      console.log(arg)
+      this.currentUser = arg
+      this.value = ''
+      this.changeRoleDialog = true
+    },
+    async changeRoleDialogSubmit(){
+
+      if(!this.value) return this.$message.info('请选择新的角色')
+      const { data: res } = await this.$http({
+        url:`users/${this.currentUser.id}/role`,
+        method:'put',
+        data:{
+          rid:this.value
+        }
+      })
+      if(res.meta.status !== 200) return this.$message.error(res.meta.msg)
+      this.getUserInfo()
+      this.changeRoleDialog = false
+    },
+
 		// page-size改变
 		handleSizeChange(newSize) {
 			this.getUsersParams.pagesize = newSize
@@ -420,6 +436,9 @@ export default {
 	height: 100%;
 	padding: 15px;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+}
+::v-deep .el-dialog {
+  text-align: left;
 }
 .el-pagination {
 	text-align: left;
