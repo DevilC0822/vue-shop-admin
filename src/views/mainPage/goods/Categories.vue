@@ -33,27 +33,34 @@
         </el-table-column>
       </el-table>
       <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="1"
-        :page-sizes="[5, 10]" :page-size="goodsCategories.pagesize" layout="total, sizes, prev, pager, next, jumper"
-        :total="goodsCategories.total">
+        :page-sizes="[1, 3, 5, 10]" :page-size="goodsCategories.pagesize"
+        layout="total, sizes, prev, pager, next, jumper" :total="goodsCategories.total">
       </el-pagination>
     </el-card>
 
 
     <!-- 添加商品分类弹出框 -->
-    <el-dialog title="添加分类" :visible.sync="addGoodsCategoriesDialog">
-      <el-form :model="addGoodsCategoriesForm" ref="addGoodsCategoriesRef" :rules="addGoodsCategoriesRule">
+    <el-dialog title="添加分类" :visible.sync="addGoodsCategoriesDialog" @close='addGoodsCategoriesDialogClosed'>
+      <el-form :model="addGoodsCategoriesParams" ref="addGoodsCategoriesRef" :rules="addGoodsCategoriesRule">
         <el-form-item label="分类名称" prop="cat_name">
-          <el-input v-model="addGoodsCategoriesForm.cat_name" autocomplete="off"></el-input>
+          <el-input v-model="addGoodsCategoriesParams.cat_name" autocomplete="off"></el-input>
         </el-form-item>
 
-        <!-- <el-form-item label="父级分类">
-            <el-cascader v-model="value" :options="options" @change="handleChange"></el-cascader>
-        </el-form-item> -->
+        <el-form-item>
+          <el-alert title="不能为第三级添加分类" type="info" :closable='false' show-icon>
+          </el-alert>
+        </el-form-item>
+
+        <el-form-item label=" 分类名称">
+          <el-cascader v-model="categoriesOptions.cat_id" :options="categoriesOptions" clearable
+            :props="{ expandTrigger: 'hover',label:'cat_name',value:'cat_id',children:'children',checkStrictly:true }"
+            @change="handleChange"></el-cascader>
+        </el-form-item>
 
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="addGoodsCategoriesDialog = false">取 消</el-button>
-        <el-button type="primary" @click="addGoodsCategoriesDialog = false">确 定</el-button>
+        <el-button type="primary" @click="addGoodsCategoriesSubmit">确 定</el-button>
       </div>
     </el-dialog>
 
@@ -82,13 +89,19 @@
           pagenum: 1,
           pagesize: 5
         },
+        addGoodsCategoriesParams: {
+          cat_pid: 0,
+          cat_name: '',
+          cat_level: 0
+        },
         goodsCategories: {},
 
         addGoodsCategoriesDialog: false,
         editGoodsCategoriesDialog: false,
 
-        addGoodsCategoriesForm: {},
-        editGoodsCategoriesForm: {},
+        editGoodsCategoriesForm: {
+          cat_name: ''
+        },
         currentId: null,
         addGoodsCategoriesRule: {
           cat_name: [{
@@ -103,7 +116,8 @@
             message: '请输入分类名称',
             trigger: 'blur'
           }, ]
-        }
+        },
+        categoriesOptions: []
       }
     },
 
@@ -113,6 +127,7 @@
 
     methods: {
       async getGoodsCategories() {
+        this.getGoodsCategoriesParams.type = ''
         const {
           data: res
         } = await this.$http({
@@ -126,14 +141,63 @@
         this.goodsCategories = res.data
       },
 
-      openAddGoodsCategoriesDialog() {
+      async openAddGoodsCategoriesDialog() {
+        this.getGoodsCategoriesParams.type = 3
+        const {
+          data: res
+        } = await this.$http({
+          url: '/categories',
+          methd: 'get',
+          params: this.getGoodsCategoriesParams
+        })
+        // 进行数据改造给第三级添加disabled
+        for (const item1 of res.data.result) {
+          for (const item2 of item1.children) {
+            if (item2.children) {
+              for (const item3 of item2.children) {
+                if (item3.cat_level === 2) {
+                  item3.disabled = true
+                }
+              }
+            }
+          }
+        }
+        console.log(res.data.result)
+        this.categoriesOptions = res.data.result
         this.addGoodsCategoriesDialog = true
+      },
+
+      handleChange(value) {
+        console.log(value)
+        if (value && value.length > 0) {
+          this.addGoodsCategoriesParams.cat_pid = value[value.length - 1]
+          this.addGoodsCategoriesParams.cat_level = value.length
+        }
       },
 
       openEditGoodsCategories(arg) {
         this.editGoodsCategoriesDialog = true
         this.currentId = arg.cat_id
         this.editGoodsCategoriesForm.cat_name = arg.cat_name
+      },
+
+      async addGoodsCategoriesSubmit() {
+        this.$refs.addGoodsCategoriesRef.validate(async (valid) => {
+          if (valid) {
+            const {
+              data: res
+            } = await this.$http({
+              url: `/categories`,
+              method: 'post',
+              data: this.addGoodsCategoriesParams
+            })
+            console.log(res)
+            if (res.meta.status !== 201) return this.$message.error(res.meta.msg)
+            this.$message.success(res.meta.msg)
+            this.getGoodsCategories()
+            this.addGoodsCategoriesDialog = false
+          }
+        })
       },
 
       async editGoodsCategoriesSubmit() {
@@ -168,6 +232,12 @@
             })
             if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
             this.$message.success('删除商品分类成功!')
+            if (this.goodsCategories.result.length === 1) {
+              // 判断当前展示的用户数据是否只有一条
+              this.getGoodsCategoriesParams.pagenum = 1 ?
+                1 :
+                this.getGoodsCategoriesParams.pagenum - 1 // 若是，则继续判断页码是否已经在第一页，若否，则-1，若是则保持在该页
+            }
             this.getGoodsCategories()
           })
           .catch(() => {
@@ -186,6 +256,9 @@
       handleCurrentChange(newPage) {
         this.getGoodsCategoriesParams.pagenum = newPage
         this.getGoodsCategories()
+      },
+      addGoodsCategoriesDialogClosed() {
+        this.$refs.addGoodsCategoriesRef.resetFields()
       }
     },
   }
@@ -199,8 +272,20 @@
       margin-top: 15px;
     }
 
-    ::v-deep .el-form-item__content {
+    .el-dialog__wrapper ::v-deep .el-form-item__label {
+      width: 80px;
+    }
+
+    .el-form-item {
       display: flex;
+    }
+
+    .el-cascader {
+      width: 100%;
+    }
+
+    ::v-deep .el-form-item__content {
+      flex: 1;
     }
   }
 </style>
