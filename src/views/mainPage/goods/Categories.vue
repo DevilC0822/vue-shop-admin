@@ -132,7 +132,7 @@
           data: res
         } = await this.$http({
           url: '/categories',
-          methd: 'get',
+          method: 'get',
           params: this.getGoodsCategoriesParams
         })
         if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
