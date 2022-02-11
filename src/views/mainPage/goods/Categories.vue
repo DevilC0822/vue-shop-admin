@@ -234,7 +234,7 @@
             this.$message.success('删除商品分类成功!')
             if (this.goodsCategories.result.length === 1) {
               // 判断当前展示的用户数据是否只有一条
-              this.getGoodsCategoriesParams.pagenum = 1 ?
+              this.getGoodsCategoriesParams.pagenum === 1 ?
                 1 :
                 this.getGoodsCategoriesParams.pagenum - 1 // 若是，则继续判断页码是否已经在第一页，若否，则-1，若是则保持在该页
             }

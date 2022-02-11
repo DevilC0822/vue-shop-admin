@@ -31,7 +31,8 @@
               <el-table-column type="expand">
                 <template slot-scope='scope'>
                   <div v-show="scope.row.attr_vals">
-                    <el-tag v-for="tag in scope.row.attr_vals.split(',')" v-show="scope.row.attr_vals" :key="tag" closable type="success">
+                    <el-tag v-for="tag in scope.row.attr_vals.split(',')" v-show="scope.row.attr_vals" :key="tag" 
+                    :closable='false' type="success">
                       {{tag}}
                     </el-tag>
                   </div>
@@ -53,7 +54,7 @@
             <el-table :data="tableData" style="width: 100%">
               <el-table-column type="expand">
                 <template slot-scope='scope'>
-                  <el-tag v-for="tag in scope.row.attr_vals.split(',')" :key="tag" closable type="success">
+                  <el-tag v-for="tag in scope.row.attr_vals.split(',')" :key="tag" :closable='false' type="success">
                     {{tag}}
                   </el-tag>
                 </template>
