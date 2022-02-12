@@ -11,7 +11,7 @@ import GoodsParams from '../views/mainPage/goods/GoodsParams.vue'
 import Categories from '../views/mainPage/goods/Categories.vue'
 import Orders from '../views/mainPage/Orders.vue'
 import Reports from '../views/mainPage/Reports.vue'
-
+import AddGoods from '../views/mainPage/goods/AddGoods.vue'
 
 
 
@@ -31,9 +31,8 @@ const routes = [{
     path: '/home',
     name: 'Home',
     component: Home,
-    redirect:'/home/welcome',
-    children:[
-      {
+    redirect: '/home/welcome',
+    children: [{
         path: 'welcome',
         name: 'Welcome',
         component: Welcome
@@ -56,7 +55,12 @@ const routes = [{
       {
         path: 'goods',
         name: 'Goods',
-        component: Goods
+        component: Goods,
+      },
+      {
+        path: 'add-goods',
+        name: 'AddGoods',
+        component: AddGoods
       },
       {
         path: 'params',
@@ -79,7 +83,7 @@ const routes = [{
         component: Reports
       },
 
-      
+
     ]
   },
   {
@@ -93,7 +97,7 @@ const routes = [{
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: function () {
+    component: function() {
       return import( /* webpackChunkName: "about" */ '../views/About.vue')
     }
   }

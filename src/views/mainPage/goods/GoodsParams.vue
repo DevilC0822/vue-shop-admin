@@ -31,8 +31,7 @@
               <el-table-column type="expand">
                 <template slot-scope='scope'>
                   <div v-show="scope.row.attr_vals">
-                    <el-tag v-for="tag in scope.row.attr_vals.split(',')" v-show="scope.row.attr_vals" :key="tag" 
-                    :closable='false' type="success">
+                    <el-tag v-for="tag in scope.row.attr_vals.split(',')" v-show="scope.row.attr_vals" :key="tag" :closable='false' type="success">
                       {{tag}}
                     </el-tag>
                   </div>
@@ -165,11 +164,11 @@
           url: '/categories',
           method: 'get',
         })
-        this.goodsCategories = res.data
         console.log('获取商品分类')
         console.log(res)
         if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
         this.$message.success(res.meta.msg)
+        this.goodsCategories = res.data
       },
       async handleChange(value) {
         console.log('级联选择框变换的值')

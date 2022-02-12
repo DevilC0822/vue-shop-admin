@@ -3,12 +3,12 @@
     <el-card class="box-card">
       <el-row>
         <el-col :span='6'>
-          <el-input placeholder="请输入商品关键字" v-model="getGoodsListParams.query" class="input-with-select">
+          <el-input placeholder="请输入商品关键字" v-model="getGoodsListParams.query" @keyup.enter.native="getGoodsList" class="input-with-select">
             <el-button slot="append" icon="el-icon-search" @click='getGoodsList'></el-button>
           </el-input>
         </el-col>
         <el-col :span='2' style="margin-left:15px;">
-          <el-button type='primary'>添加商品</el-button>
+          <el-button type='primary' @click="addGoods">添加商品</el-button>
         </el-col>
       </el-row>
 
@@ -41,7 +41,12 @@
       </el-row>
 
 
+
+
+
+
     </el-card>
+  
   </div>
 </template>
 
@@ -55,10 +60,10 @@
           pagenum: 1,
           pagesize: 5
         },
-        currentPagenum:null,
+        currentPagenum: null,
         searchGoodsKeyword: '',
         goodsListDate: [],
-        goodsTotal: null
+        goodsTotal: null,
       }
     },
     created() {
@@ -79,6 +84,9 @@
         this.goodsListDate = res.data.goods
         this.goodsTotal = res.data.total
         this.currentPagenum = res.data.pagenum
+      },
+      addGoods() {
+        this.$router.push('/home/add-goods')
       },
 
       editGoodsInfo() {
