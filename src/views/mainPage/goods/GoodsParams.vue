@@ -29,18 +29,19 @@
           <el-tab-pane :disabled="currentCategoryId == null" label="动态参数" name="many">
             <el-table :data="tableData" style="width: 100%">
               <el-table-column type="expand">
-                <template slot-scope='scope'>
-                  <div v-show="scope.row.attr_vals">
-                    <el-tag v-for="tag in scope.row.attr_vals.split(',')" v-show="scope.row.attr_vals" :key="tag" :closable='false' type="success">
-                      {{tag}}
-                    </el-tag>
-                  </div>
-
-                </template> </el-table-column>
+                <template v-slot='scope'>
+                  <el-tag v-for="(tag,index) in scope.row.attr_vals" v-show="scope.row.attr_vals" :key="index" closable @close="handleClose(tag,scope.row)" type="success">
+                    {{tag}}
+                  </el-tag>
+                  <el-input class="input-new-tag" v-if="scope.row.inputVisible" v-model="scope.row.inputValue" ref="saveTagInput" size="small" @keyup.enter.native="handleInputConfirm(scope.row)" @blur="handleInputConfirm(scope.row)">
+                  </el-input>
+                  <el-button v-else class="button-new-tag" size="small" @click="showInput(scope.row)">+ New Tag</el-button>
+                </template>
+              </el-table-column>
               <el-table-column type="index"> </el-table-column>
               <el-table-column label="参数名称" prop="attr_name"> </el-table-column>
               <el-table-column label="操作">
-                <template slot-scope="scope">
+                <template v-slot="scope">
                   <el-button @click="editParams(scope.row)" type="text" size="small">编辑</el-button>
                   <el-button type="text" size="small" @click='deleteParams(scope.row)'>删除</el-button>
                 </template>
@@ -52,16 +53,21 @@
           <el-tab-pane :disabled="currentCategoryId == null" label="静态描述" name="only">
             <el-table :data="tableData" style="width: 100%">
               <el-table-column type="expand">
-                <template slot-scope='scope'>
-                  <el-tag v-for="tag in scope.row.attr_vals.split(',')" :key="tag" :closable='false' type="success">
-                    {{tag}}
-                  </el-tag>
+                <template v-slot='scope'>
+                  <div v-show="scope.row.attr_vals.length > 0">
+                    <el-tag v-for="(tag,index) in scope.row.attr_vals" :key="index" closable @close="handleClose(tag,scope.row)" type="success">
+                      {{tag}}
+                    </el-tag>
+                    <el-input class="input-new-tag" v-if="scope.row.inputVisible" v-model="scope.row.inputValue" ref="saveTagInput" size="small" @keyup.enter.native="handleInputConfirm(scope.row)" @blur="handleInputConfirm(scope.row)">
+                    </el-input>
+                    <el-button v-else class="button-new-tag" size="small" @click="showInput(scope.row)">+ New Tag</el-button>
+                  </div>
                 </template>
               </el-table-column>
               <el-table-column type="index"> </el-table-column>
               <el-table-column label="参数名称" prop="attr_name"> </el-table-column>
               <el-table-column label="操作">
-                <template slot-scope="scope">
+                <template v-slot="scope">
                   <el-button @click="editParams(scope.row)" type="text" size="small">编辑</el-button>
                   <el-button type="text" size="small" @click='deleteParams(scope.row)'>删除</el-button>
                 </template>
@@ -91,9 +97,9 @@
         <el-form-item label="参数名称" prop="attr_name">
           <el-input v-model="editParamsForm.attr_name"></el-input>
         </el-form-item>
-        <el-form-item label="子参数">
+        <!-- <el-form-item label="子参数">
           <el-input v-model="editParamsForm.attr_vals"></el-input>
-        </el-form-item>
+        </el-form-item> -->
 
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -121,8 +127,10 @@
         editParamsForm: {},
         addParamsForm: {
           attr_name: '',
-          attr_vals: ''
+          attr_vals: []
         },
+
+
 
         //表单验证规则
         addRules: {
@@ -175,19 +183,22 @@
         console.log(value)
         this.currentCategoryId = null
         this.currentCategoryId = value.length === 3 ? value[2] : null
-        if (this.currentCategoryParamsKind) {
+        if (this.currentCategoryParamsKind && this.currentCategoryId) {
           this.getCategory()
         }
 
         // 根据商品分类id获取分类名
-        const {
-          data: res
-        } = await this.$http({
-          url: `categories/${this.currentCategoryId}`,
-          method: 'get',
-        })
-        if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
-        this.currentCategoryName = res.data.cat_name
+        if (this.currentCategoryId) {
+          const {
+            data: res
+          } = await this.$http({
+            url: `categories/${this.currentCategoryId}`,
+            method: 'get',
+          })
+          if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+          this.currentCategoryName = res.data.cat_name
+        }
+
       },
       changeTab(value) {
         this.currentCategoryParamsKind = value.paneName
@@ -206,7 +217,14 @@
         console.log('获取参数输出')
         console.log(res)
         if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+        // 数据改造 attr_vals 改造成数组形式
+        res.data.forEach(item => {
+          item.attr_vals = item.attr_vals.split(',')
+          item.inputVisible = false
+          item.inputValue = ''
+        })
         this.tableData = res.data
+
       },
       addParams() {
         this.addParamsDialog = true
@@ -280,6 +298,45 @@
               message: '已取消删除',
             })
           })
+      },
+
+
+      async saveAttr(row) {
+        const {
+          data: res
+        } = await this.$http({
+          url: `categories/${row.cat_id}/attributes/${row.attr_id}`,
+          method: 'put',
+          data: {
+            attr_name: row.attr_name,
+            attr_sel: this.currentCategoryParamsKind,
+            attr_vals: row.attr_vals.join(','),
+          },
+        })
+        if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+        this.$message.success('更新参数成功!')
+      },
+
+      async handleClose(tag, row) {
+        row.attr_vals.splice(row.attr_vals.indexOf(tag), 1);
+        this.saveAttr(row)
+      },
+
+      showInput(row) {
+        this.$set(row,'inputVisible',true)
+        // row.inputVisible = true
+        this.$nextTick(_ => {
+          this.$refs.saveTagInput.$refs.input.focus()
+        })
+      },
+
+      handleInputConfirm(row) {
+        if (row.inputValue) {
+          row.attr_vals.push(row.inputValue);
+          this.saveAttr(row)
+        }
+        row.inputVisible = false
+        row.inputValue = '';
       }
     },
 
@@ -300,6 +357,24 @@
       &:first-child {
         margin-left: 0;
       }
+    }
+
+    .el-tag+.el-tag {
+      margin-left: 10px;
+    }
+
+    .button-new-tag {
+      margin-left: 10px;
+      height: 32px;
+      line-height: 30px;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .input-new-tag {
+      width: 90px;
+      margin-left: 10px;
+      vertical-align: bottom;
     }
   }
 </style>
