@@ -54,33 +54,90 @@
             </el-form>
           </div>
           <div class="secondStep" v-show="active === 1">
-            2
+            <div style='padding-left: 15px;'>
+              <el-alert title="可省略" type="info" show-icon>
+              </el-alert>
+              <div style='padding-top: 20px;'>
+
+                <el-form :model="goodsInfoFrom.attrs[0]" label-width="100px" class="demo-ruleForm">
+                  <el-form-item label="动态参数id">
+                    <el-input v-model="goodsInfoFrom.attrs[0].attr_id"></el-input>
+                  </el-form-item>
+                  <el-form-item label="动态参数">
+                    <el-input v-model="goodsInfoFrom.attrs[0].attr_value"></el-input>
+                  </el-form-item>
+                </el-form>
+
+              </div>
+
+            </div>
           </div>
           <div class="threeStep" v-show="active === 2">
-            3
+            <div style='padding-left: 15px;'>
+              <el-alert title="可省略" type="info" show-icon>
+              </el-alert>
+              <div style='padding-top: 20px;'>
+                <el-form :model="goodsInfoFrom.attrs[1]" label-width="100px" class="demo-ruleForm">
+                  <el-form-item label="静态属性id">
+                    <el-input v-model="goodsInfoFrom.attrs[1].attr_id"></el-input>
+                  </el-form-item>
+                  <el-form-item label="静态属性">
+                    <el-input v-model="goodsInfoFrom.attrs[1].attr_value"></el-input>
+                  </el-form-item>
+                </el-form>
+              </div>
+
+            </div>
           </div>
           <div class="fourStep" v-show="active === 3">
-            4
+
+            <div style='padding-left: 15px;'>
+              <el-alert title="可省略" type="info" show-icon>
+              </el-alert>
+              <!--
+              action 表示图片要上传到的后台API地址
+              handlePreview 点击预览触发
+              handleRemove 删除图片触发
+              fileList 指定文件列表
+              list-type 指定预览组件的呈现方式
+            -->
+              <el-upload class="upload-demo" :action="uploadURL" :on-preview="handlePreview" :on-remove="handleRemove" list-type="picture" :headers="headersObj" :on-success="handleSuccess">
+                <el-button size="small" type="primary" style="margin-top: 20px;">点击上传</el-button>
+              </el-upload>
+            </div>
+
           </div>
           <div class="fiveStep" v-show="active === 4">
-            5
+            <div style='padding-left: 15px;'>
+              <el-alert title="可省略" type="info" show-icon>
+              </el-alert>
+              <el-input style="padding-top: 20px;" type="textarea" rows="3" placeholder="请输入内容" v-model="goodsInfoFrom.goods_introduce">
+              </el-input>
+            </div>
+
           </div>
+
+
         </el-col>
-      </el-row>
-      <el-row style="margin-top:15px;text-align:right;">
-        <el-col>
-          <el-button style="margin-top: 12px;" v-show='active' @click="active--">上一步</el-button>
+        <div class='ctrl-container'>
+          <el-button style="margin-top: 12px;" v-show='active' @click="prev">上一步</el-button>
           <el-button style="margin-top: 12px;" @click="next" ref="submitBtn">下一步</el-button>
-        </el-col>
+        </div>
       </el-row>
     </el-card>
+
+
+
+    <!--    图片预览-->
+    <el-dialog title="图片预览" :visible.sync="previewDialogVisible" width="50%">
+      <img :src="previewPath" alt="" class="perviewImg" />
+    </el-dialog>
   </div>
 </template>
 
 <script>
   export default {
     name: 'AddGoods',
-
     created() {
       this.$parent.$refs.breadcrumb.$el.style.display = 'none';
       this.getGoodsCategoriesParams()
@@ -98,9 +155,40 @@
           goods_price: '',
           goods_number: '',
           goods_weight: '',
-          goods_cat: ''
+          goods_cat: '',
+          // 图片的数组
+          pics: [{
+            pic: ''
+          }],
+          // 商品的详情描述
+          goods_introduce: '',
+          attrs: [
+            // 动态参数
+            {
+              "attr_id": 15,
+              "attr_value": 'ddd'
+            },
+            // 静态属性
+            {
+              "attr_id": 15,
+              "attr_value": 'eee'
+            }
+          ],
         },
         goodsCategories: [],
+
+        
+
+        // 上传图片的URL地址
+        uploadURL: 'http://175.24.198.84:2999/api/private/v1/upload',
+        headersObj: {
+          Authorization: window.sessionStorage.getItem('token')
+        },
+        // 预览图片的路径
+        previewPath: '',
+        // 图片预览的对话框
+        previewDialogVisible: false,
+
         // 添加商品表单验证规则
         goodsInfoFromRules: {
           goods_name: [{
@@ -109,9 +197,9 @@
               trigger: 'blur'
             },
             {
-              min: 1,
+              min: 2,
               max: 16,
-              message: '长度在 1 到 16 个字符',
+              message: '长度在 2 到 16 个字符',
               trigger: 'blur'
             }
           ],
@@ -160,8 +248,8 @@
       }
     },
 
-    methods: {
 
+    methods: {
       async getGoodsCategoriesParams() {
         const {
           data: res
@@ -181,6 +269,9 @@
       },
 
       async addGoodsSubmit() {
+        console.log(this.goodsInfoFrom)
+        // 未知原因, pic有值时导致后台api瘫痪
+        this.goodsInfoFrom.pics[0].pic = ''
         const {
           data: res
         } = await this.$http({
@@ -195,9 +286,15 @@
           this.$refs.submitBtn.$el.innerHTML = '下一步'
           return this.$message.error(res.meta.msg)
         }
+        this.$message.success(res.meta.msg)
         this.$router.push('/home/goods')
       },
-
+      prev() {
+        this.active--
+        if (this.active !== 4) {
+          this.$refs.submitBtn.$el.innerHTML = '下一步'
+        }
+      },
       next() {
         this.$refs.submitBtn.$el.innerHTML = '下一步'
         if (this.active === 0) {
@@ -214,7 +311,34 @@
         if (this.active === 5) {
           this.addGoodsSubmit()
         }
-      }
+      },
+
+
+     
+
+      // 点击图片预览时触发
+      handlePreview(file) {
+        this.previewPath = file.response.data.url
+        this.previewDialogVisible = true
+        console.log('预览图片', file)
+      },
+      // 处理移除图片的操作
+      handleRemove(file) {
+        // 1. 获取将要删除的图片的临时路径
+        const filePath = file.response.data.tmp_path
+        // 2. 从 pics 数组中找到这个图片的对应的索引值
+        const index = this.goodsInfoFrom.pics.findIndex(x => x.pic === filePath)
+        // 3. 调用数组的splice方法,把图片信息对象,从pics数组中移除
+        this.goodsInfoFrom.pics.splice(index, 1)
+        console.log('移除图片', file, this.goodsInfoFrom)
+      },
+      // 监听图片上传成功的事件
+      handleSuccess(resposne) {
+        this.goodsInfoFrom.pics[0].pic = resposne.data.tmp_path
+        console.log(resposne)
+        console.log(this.goodsInfoFrom)
+      },
+
     }
 
   }
@@ -223,6 +347,12 @@
 <style lang="scss" scoped>
   .add-goods-view {
     padding: 0 0 0 15px;
+
+    .ctrl-container {
+      position: absolute;
+      bottom: 5vw;
+      right: 0;
+    }
 
     .el-breadcrumb {
       font-size: 16px;
