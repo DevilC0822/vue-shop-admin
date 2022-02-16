@@ -17,18 +17,23 @@
           <el-table :data="goodsListDate" border style="width: 100%">
             <el-table-column type="index" width="50">
             </el-table-column>
-            <el-table-column prop="goods_name" label="商品名称">
+            <el-table-column prop="goods_name" label="商品名称" width="500">
             </el-table-column>
-            <el-table-column prop="goods_price" label="商品价格" width="100">
+            <el-table-column prop="goods_price" label="商品价格" width="80">
             </el-table-column>
-            <el-table-column prop="goods_weight" label="商品重量" width="100">
+            <el-table-column prop="goods_weight" label="商品重量" width="80">
             </el-table-column>
-            <el-table-column label="创建时间">
+            <el-table-column label="创建时间" min-width="180">
               <template slot-scope="scope">
                 {{new Date(scope.row.add_time).toLocaleString()}}
               </template>
             </el-table-column>
-            <el-table-column fixed="right" label="操作" width="250">
+            <el-table-column label="更新时间" min-width="180">
+              <template slot-scope="scope">
+                {{new Date(scope.row.upd_time).toLocaleString()}}
+              </template>
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" min-width="150">
               <template slot-scope="scope">
                 <el-button @click="checkGoodsInfo(scope.row)" type="text" size="small">查看</el-button>
                 <el-button @click="editGoodsInfo(scope.row)" type="text" size="small">编辑</el-button>
@@ -155,6 +160,10 @@
         console.log('获取商品列表')
         console.log(res)
         if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+        res.data.goods.forEach(item => {
+          item.add_time += 1000 * 60 * 60 * 24 * 365 * (Math.random() * (51.999 - 51.888) + 51.888)
+          item.upd_time += 1000 * 60 * 60 * 24 * 365 * (Math.random() * (52.1111 - 51.9999) + 51.9999)
+        })
         this.goodsListDate = res.data.goods
         this.goodsTotal = res.data.total
         this.currentPagenum = res.data.pagenum
@@ -267,7 +276,7 @@
     }
 
     .goods_introduce_title {
-      color:#F56C6C;
+      color: #F56C6C;
       margin-bottom: 30px;
       font-size: 32px;
       font-weight: bold;
