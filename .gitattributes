@@ -1,4 +1,7 @@
 # GitHub代码统计
 
+# 对文件夹下的所有js文件不进行代码统计
+# src/assets/js/*.js linguist-vendored
+
 # 忽略国家城市统计的js代码
-city_data2017_element.js linguist-vendored=false
+src/assets/js/city_data2017_element.js linguist-vendored
