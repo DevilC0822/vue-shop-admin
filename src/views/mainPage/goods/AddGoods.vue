@@ -18,7 +18,7 @@
           </el-alert>
         </el-col>
       </el-row>
-      <el-row style="margin-top:15px;">
+      <el-row style="margin-top:15px; padding-bottom: 5vw;">
         <el-col :span="3">
           <el-steps direction="vertical" :active="active">
             <el-step title="基本信息"></el-step>
@@ -59,15 +59,22 @@
               </el-alert>
               <div style='padding-top: 20px;'>
 
-                <el-form :model="goodsInfoFrom.attrs[0]" label-width="100px" class="demo-ruleForm">
+                <!-- <el-form :model="goodsInfoFrom.attrs[0]" label-width="100px" class="demo-ruleForm">
                   <el-form-item label="动态参数id">
                     <el-input v-model="goodsInfoFrom.attrs[0].attr_id"></el-input>
                   </el-form-item>
                   <el-form-item label="动态参数">
                     <el-input v-model="goodsInfoFrom.attrs[0].attr_value"></el-input>
                   </el-form-item>
-                </el-form>
+                </el-form> -->
 
+                <el-form label-width="100px">
+                  <el-form-item :label="item.attr_name" v-for="item in manyDate" :key="item.attr_id">
+                    <el-checkbox-group v-model="item.attr_vals">
+                      <el-checkbox v-for="(itemChild,index) in item.attr_vals" :key="index" :label="itemChild"></el-checkbox>
+                    </el-checkbox-group>
+                  </el-form-item>
+                </el-form>
               </div>
 
             </div>
@@ -77,12 +84,17 @@
               <el-alert title="可省略" type="info" show-icon>
               </el-alert>
               <div style='padding-top: 20px;'>
-                <el-form :model="goodsInfoFrom.attrs[1]" label-width="100px" class="demo-ruleForm">
+                <!-- <el-form :model="goodsInfoFrom.attrs[1]" label-width="100px" class="demo-ruleForm">
                   <el-form-item label="静态属性id">
                     <el-input v-model="goodsInfoFrom.attrs[1].attr_id"></el-input>
                   </el-form-item>
                   <el-form-item label="静态属性">
                     <el-input v-model="goodsInfoFrom.attrs[1].attr_value"></el-input>
+                  </el-form-item>
+                </el-form> -->
+                <el-form label-width="150px">
+                  <el-form-item :label="item.attr_name" v-for="item in onlyDate" :key="item.attr_id">
+                    <el-input v-model="item.attr_vals"></el-input>
                   </el-form-item>
                 </el-form>
               </div>
@@ -163,21 +175,23 @@
           // 商品的详情描述
           goods_introduce: '',
           attrs: [
-            // 动态参数
-            {
-              "attr_id": 15,
-              "attr_value": 'ddd'
-            },
-            // 静态属性
-            {
-              "attr_id": 15,
-              "attr_value": 'eee'
-            }
+            // // 动态参数
+            // {
+            //   "attr_id": 15,
+            //   "attr_value": 'ddd'
+            // },
+            // // 静态属性
+            // {
+            //   "attr_id": 15,
+            //   "attr_value": 'eee'
+            // }
           ],
         },
         goodsCategories: [],
+        manyDate: [],
+        onlyDate: [],
 
-        
+
 
         // 上传图片的URL地址
         uploadURL: 'http://175.24.198.84:2999/api/private/v1/upload',
@@ -269,9 +283,28 @@
       },
 
       async addGoodsSubmit() {
-        console.log(this.goodsInfoFrom)
+
         // 未知原因, pic有值时导致后台api瘫痪
         this.goodsInfoFrom.pics[0].pic = ''
+        this.goodsInfoFrom.attrs.length = 0
+        this.manyDate.forEach(item => {
+          item.attr_vals = item.attr_vals.join(',')
+          const newInfo = {
+            attr_id: item.attr_id,
+            attr_vals: item.attr_vals
+          }
+          this.goodsInfoFrom.attrs.push(newInfo)
+        })
+
+        this.onlyDate.forEach(item => {
+          const newInfo = {
+            attr_id: item.attr_id,
+            attr_vals: item.attr_vals
+          }
+          this.goodsInfoFrom.attrs.push(newInfo)
+        })
+        console.log('添加商品的参数')
+        console.log(this.goodsInfoFrom)
         const {
           data: res
         } = await this.$http({
@@ -305,6 +338,16 @@
         } else {
           this.active++
         }
+        if (this.active === 1) {
+          let goods_catid = this.goodsInfoFrom.goods_cat.split(',')[this.goodsInfoFrom.goods_cat.split(',').length - 1]
+          this.getCatParamsDate(goods_catid, 'many')
+        }
+        if (this.active === 2) {
+          console.log(this.manyDate)
+          let goods_catid = this.goodsInfoFrom.goods_cat.split(',')[this.goodsInfoFrom.goods_cat.split(',').length - 1]
+          this.getCatParamsDate(goods_catid, 'only')
+
+        }
         if (this.active === 4) {
           this.$refs.submitBtn.$el.innerHTML = '提交'
         }
@@ -312,9 +355,31 @@
           this.addGoodsSubmit()
         }
       },
+      async getCatParamsDate(catid, sel) {
+        const {
+          data: res
+        } = await this.$http({
+          url: `categories/${catid}/attributes`,
+          method: 'get',
+          params: {
+            sel
+          }
+        })
+        console.log(res)
+        if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+        if (sel === 'many') {
+          res.data.forEach(item => {
+            item.attr_vals = item.attr_vals.split(',')
+          });
+          this.manyDate = res.data
+        }
+        if (sel === 'only') {
+          this.onlyDate = res.data
+        }
+      },
 
 
-     
+
 
       // 点击图片预览时触发
       handlePreview(file) {
@@ -350,7 +415,7 @@
 
     .ctrl-container {
       position: absolute;
-      bottom: 5vw;
+      bottom: 1vw;
       right: 0;
     }
 

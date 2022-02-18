@@ -40,10 +40,11 @@
                 {{new Date(scope.row.update_time).toLocaleString()}}
               </template>
             </el-table-column>
-            <el-table-column fixed="right" label="操作" min-width="120">
+            <el-table-column fixed="right" label="操作" min-width="180">
               <template slot-scope="scope">
                 <el-button @click="editOrdersInfo(scope.row)" type="text" size="small">编辑</el-button>
-                <el-button @click="checkOrdersInfo(scope.row)" type="text" size="small">查看</el-button>
+                <el-button @click="editLocation(scope.row)" type="text" size="small">修改地址</el-button>
+                <el-button @click="checkLocationInfo(scope.row)" type="text" size="small">查看物流</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -83,10 +84,44 @@
         <el-button type="primary" @click="editOrdersSubmit">确 定</el-button>
       </div>
     </el-dialog>
+
+    <!-- 修改地址弹出框 -->
+    <el-dialog title="修改用户" :visible.sync="editLocationDialog">
+      <el-form>
+        <el-form-item label="省/市" label-width="80px">
+          <el-cascader v-model="cityOptions.value" :options="cityOptions" :props="{
+							expandTrigger: 'hover',
+							label: 'label',
+							value: 'value',
+							children: 'children',
+						}" @change="changeProvince"></el-cascader>
+        </el-form-item>
+        <el-form-item label="详细地址" label-width="80px">
+          <el-input></el-input>
+        </el-form-item>
+      </el-form>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editLocationDialog = false">取 消</el-button>
+        <el-button type="primary" @click="editLocationDialog">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <!--    显示物流进度的对话框-->
+    <el-dialog title="物流进度" :visible.sync="progressDialogVisible" width="50%">
+      <el-timeline :reverse="false">
+        <el-timeline-item v-for="(activity, index) in progressInfo" :key="index" :timestamp="activity.ftime">
+          {{ activity.context }}
+        </el-timeline-item>
+      </el-timeline>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
+  import cityOptions from '@/assets/js/city_data2017_element.js'
+
   export default {
     name: 'Orders',
     data() {
@@ -130,6 +165,7 @@
 
 
       return {
+        cityOptions: cityOptions,
         ordersListDate: [],
         ordersTotal: null,
         getOrdersListParams: {
@@ -141,6 +177,9 @@
 
         },
         editOrdersListDialog: false,
+        editLocationDialog: false,
+        progressDialogVisible: false,
+        progressInfo: [],
 
 
         // 编辑订单表单验证规则
@@ -210,8 +249,17 @@
         this.editOrdersForm = row
         this.editOrdersListDialog = true
       },
-      checkOrdersInfo(row) {
+      async checkOrdersInfo(row) {
         console.log(row)
+        const {
+          data: res
+        } = await this.$http({
+          url: `orders/${row.order_id}}`,
+          method: 'get'
+        })
+        console.log('获取订单详情')
+        console.log(res)
+
       },
       async editOrdersSubmit() {
         console.log(this.editOrdersForm)
@@ -230,9 +278,28 @@
         // if (res.meta.status !== 201) return this.$message.error(res.meta.msg)
         this.getOrdersList()
         this.editOrdersListDialog = false
-
       },
 
+      editLocation() {
+        this.editLocationDialog = true
+      },
+
+      changeProvince(value) {
+        console.log(value)
+      },
+
+      async checkLocationInfo() {
+        let id = 1106975712662
+        const {
+          data: res
+        } = await this.$http({
+          url: `/kuaidi/${id}`
+        })
+        console.log(res)
+        if (res.meta.status !== 200) return this.$message.error('获取物流进度失败！')
+        this.progressInfo = res.data
+        this.progressDialogVisible = true
+      },
 
       // page-size改变
       handleSizeChange(newSize) {
@@ -258,6 +325,10 @@
     .el-pagination {
       text-align: left;
       margin-top: 15px;
+    }
+
+    .el-cascader {
+      width: 100%;
     }
   }
 </style>
