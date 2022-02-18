@@ -1,0 +1,4 @@
+# GitHub代码统计
+
+# 忽略国家城市统计的js代码
+city_data2017_element.js linguist-vendored=false
