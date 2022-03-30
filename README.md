@@ -4,7 +4,7 @@
 
 项目地址:https://github.com/DevilC0822/vue-shop-admin
 
-后端接口:https://github.com/DevilC0822/shop-admin-server
+后端接口:https://github.com/DevilC0822/vue_shop_server
 
 黑马的项目,主要用来练习巩固Vue2,接触下后台管理系统。
 
